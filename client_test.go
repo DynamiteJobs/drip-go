@@ -202,6 +202,45 @@ func TestFetchSubscriber(t *testing.T) {
 	}
 }
 
+func TestTagsReq(t *testing.T) {
+	tables := []struct {
+		req  *drip.TagsReq
+		resp *mockResp
+	}{
+		{
+			req: &drip.TagsReq{
+				Tags: []drip.TagReq{
+					drip.TagReq{
+						Email: testEmail,
+						Tag:   "testingtags",
+					},
+				},
+			},
+			resp: &mockResp{
+				desc:         "failed to tag subscriber",
+				hasError:     false,
+				minCodeError: 0,
+			},
+		},
+	}
+
+	dripClient, err := drip.New(apiKey, accountID)
+	if err != nil {
+		t.Fatalf("Failed to get drip client: %s", err)
+	}
+	createTestEmail(t, dripClient)
+
+	for _, table := range tables {
+		resp, err := dripClient.TagSubscriber(table.req)
+		if err != nil && table.resp.hasError != true {
+			t.Fatalf("hasError %s: %s", table.resp.desc, err)
+		}
+		if resp != nil && len(resp.Errors) < table.resp.minCodeError {
+			t.Fatalf("minCodeError %s", table.resp.desc)
+		}
+	}
+}
+
 func createTestEmail(t *testing.T, dripClient *drip.Client) error {
 	req := &drip.UpdateSubscribersReq{
 		Subscribers: []drip.UpdateSubscriber{

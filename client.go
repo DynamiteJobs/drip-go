@@ -242,3 +242,31 @@ func (c *Client) FetchSubscriber(idOrEmail string) (*SubscribersResp, error) {
 	err = c.decodeResp(httpResp, resp)
 	return resp, err
 }
+
+// TagsReq is a request for TagSubscription.
+type TagsReq struct {
+	Tags []TagReq `json:"tags,omitempty"`
+}
+
+// TagReq is a part of a TagsReq.
+type TagReq struct {
+	Email string `json:"email,omitempty"`
+	Tag   string `json:"tag,omitempty"`
+}
+
+// TagSubscriber adds a tag to a subscriber.
+func (c *Client) TagSubscriber(req *TagsReq) (*Response, error) {
+	url := fmt.Sprintf("%s/%s/tags", baseURL, c.accountID)
+	httpReq, err := c.getReq(http.MethodPost, url, req)
+	if err != nil {
+		return nil, err
+	}
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(Response)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
+}

@@ -21,6 +21,8 @@ if len(resp.Errors) > 0 {
 // resp.Subscribers has list of subscribers
 ```
 
+Look at test for more examples.
+
 # Contributions
 Please feel free to add a pull request for any feature not available. Pull requests should include test.
 
