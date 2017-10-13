@@ -11,6 +11,7 @@ var (
 	// TODO: setup for test
 	apiKey    = os.Getenv("DRIP_API_KEY")
 	accountID = os.Getenv("DRIP_ACCOUNT_ID")
+	testEmail = "test@test.com"
 )
 
 type mockSubscribersResp struct {
@@ -38,7 +39,6 @@ func TestNew(t *testing.T) {
 }
 
 func TestListSubscribers(t *testing.T) {
-
 	tables := []struct {
 		req  *drip.ListSubscribersReq
 		resp *mockSubscribersResp
@@ -70,6 +70,58 @@ func TestListSubscribers(t *testing.T) {
 			t.Logf("%+v", resp)
 			t.Fatalf("minSubs %s", table.resp.desc)
 		}
+	}
+}
 
+func TestUpdateSubscriber(t *testing.T) {
+	tables := []struct {
+		req  *drip.UpdateSubscribersReq
+		resp *mockSubscribersResp
+	}{
+		{
+			req: &drip.UpdateSubscribersReq{
+				Subscribers: []drip.UpdateSubscriber{
+					drip.UpdateSubscriber{
+						Email:    "test@test.com",
+						NewEmail: "test@test.com",
+						Tags:     []string{"dev", "test"},
+					},
+				},
+			},
+			resp: &mockSubscribersResp{
+				desc:         "failed to get min 1 sub with no parms",
+				minSubs:      1,
+				hasError:     false,
+				minCodeError: 0,
+			},
+		},
+		{
+			req: &drip.UpdateSubscribersReq{},
+			resp: &mockSubscribersResp{
+				desc:         "failed to get error with no id and email",
+				minSubs:      0,
+				hasError:     true,
+				minCodeError: 0,
+			},
+		},
+	}
+
+	dripClient, err := drip.New(apiKey, accountID)
+	if err != nil {
+		t.Fatalf("Failed to get drip client: %s", err)
+	}
+	for _, table := range tables {
+		printJSON(table.req)
+		resp, err := dripClient.UpdateSubscriber(table.req)
+		if err != nil && table.resp.hasError != true {
+			t.Fatalf("hasError %s: %s", table.resp.desc, err)
+		}
+		if len(resp.Errors) < table.resp.minCodeError {
+			t.Fatalf("minCodeError %s", table.resp.desc)
+		}
+		if len(resp.Subscribers) < table.resp.minSubs {
+			t.Logf("%+v", resp)
+			t.Fatalf("minSubs %s", table.resp.desc)
+		}
 	}
 }

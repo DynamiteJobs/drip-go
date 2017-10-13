@@ -132,24 +132,62 @@ type ListSubscribersReq struct {
 	Tags             []string   `json:"tags,omitempty"`
 	SubscribedBefore *time.Time `json:"subscribed_before,omitempty"`
 	SubscribedAfter  *time.Time `json:"subscribed_after,omitempty"`
-	Page             int        `json:"page,omitempty"`
-	PerPage          int        `json:"per_page,omitempty"`
+	Page             *int       `json:"page,omitempty"`
+	PerPage          *int       `json:"per_page,omitempty"`
 }
 
 // ListSubscribers returns a list of subscribers. Either an ID or Email can
-func (c *Client) ListSubscribers(request *ListSubscribersReq) (*SubscribersResp, error) {
+func (c *Client) ListSubscribers(req *ListSubscribersReq) (*SubscribersResp, error) {
 	url := fmt.Sprintf("%s/%s/subscribers", baseURL, c.accountID)
-	req, err := c.getReq(http.MethodGet, url, request)
+	httpReq, err := c.getReq(http.MethodGet, url, req)
 	if err != nil {
 		return nil, err
 	}
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(SubscribersResp)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
+}
 
-	resp, err := c.HTTPClient.Do(req)
+// UpdateSubscriber is the info available to update or create a subscriber.
+type UpdateSubscriber struct {
+	Email          string            `json:"email,omitempty"`
+	ID             string            `json:"id,omitempty"`
+	NewEmail       string            `json:"new_email,omitempty"`
+	UserID         string            `json:"user_id,omitempty"`
+	TimeZone       string            `json:"time_zone,omitempty"`
+	LifetimeValue  *float32          `json:"lifetime_value,omitempty"`
+	IPAddress      string            `json:"ip_address,omitempty"`
+	CustomerFields map[string]string `json:"customer_fields,omitempty"`
+	Tags           []string          `json:"tags,omitempty"`
+	RemoveTags     []string          `json:"remove_tags,omitempty"`
+	Prospect       *bool             `json:"prospect,omitempty"`
+	BaseLeadScore  *int              `json:"base_lead_score,omitempty"`
+}
+
+// UpdateSubscribersReq is a request for UpdateSubscriber.
+type UpdateSubscribersReq struct {
+	Subscribers []UpdateSubscriber `json:"subscribers,omitempty"`
+}
+
+// UpdateSubscriber creates or updates a subscriber.
+// If you need to create or update a collection of subscribers at once, use our batch API instead.
+func (c *Client) UpdateSubscriber(req *UpdateSubscribersReq) (*SubscribersResp, error) {
+	url := fmt.Sprintf("%s/%s/subscribers", baseURL, c.accountID)
+	httpReq, err := c.getReq(http.MethodPost, url, req)
 	if err != nil {
 		return nil, err
 	}
-	response := new(SubscribersResp)
-	response.StatusCode = resp.StatusCode
-	err = c.decodeResp(resp, response)
-	return response, err
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(SubscribersResp)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
 }
