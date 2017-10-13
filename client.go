@@ -17,6 +17,8 @@ var (
 	ErrBadAPIKey = fmt.Errorf("bad api key")
 	// ErrBadAccountID is returned by New if bad account ID.
 	ErrBadAccountID = fmt.Errorf("bad drip account id")
+	//
+	ErrIDorEmailEmpty = fmt.Errorf("ID or Email cannot be empty")
 )
 
 // Client is a client to interact with the Drip API.
@@ -203,6 +205,9 @@ func (c *Client) UpdateSubscriber(req *UpdateSubscribersReq) (*SubscribersResp, 
 
 // DeleteSubscriber deletes a subscriber.
 func (c *Client) DeleteSubscriber(idOrEmail string) (*Response, error) {
+	if idOrEmail == "" {
+		return nil, ErrIDorEmailEmpty
+	}
 	url := fmt.Sprintf("%s/%s/subscribers/%s", baseURL, c.accountID, idOrEmail)
 	httpReq, err := c.getReq(http.MethodDelete, url, nil)
 	if err != nil {
@@ -213,6 +218,26 @@ func (c *Client) DeleteSubscriber(idOrEmail string) (*Response, error) {
 		return nil, err
 	}
 	resp := new(Response)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
+}
+
+// FetchSubscriber fetches a subscriber.
+func (c *Client) FetchSubscriber(idOrEmail string) (*SubscribersResp, error) {
+	if idOrEmail == "" {
+		return nil, ErrIDorEmailEmpty
+	}
+	url := fmt.Sprintf("%s/%s/subscribers/%s", baseURL, c.accountID, idOrEmail)
+	httpReq, err := c.getReq(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(SubscribersResp)
 	resp.StatusCode = httpResp.StatusCode
 	err = c.decodeResp(httpResp, resp)
 	return resp, err

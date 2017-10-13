@@ -69,10 +69,10 @@ func TestListSubscribers(t *testing.T) {
 		if err != nil && table.resp.hasError != true {
 			t.Fatalf("hasError %s: %s", table.resp.desc, err)
 		}
-		if len(resp.Errors) < table.resp.minCodeError {
+		if resp != nil && len(resp.Errors) < table.resp.minCodeError {
 			t.Fatalf("minCodeError %s", table.resp.desc)
 		}
-		if len(resp.Subscribers) < table.resp.minSubs {
+		if resp != nil && len(resp.Subscribers) < table.resp.minSubs {
 			t.Fatalf("minSubs %s", table.resp.desc)
 		}
 	}
@@ -87,9 +87,8 @@ func TestUpdateSubscriber(t *testing.T) {
 			req: &drip.UpdateSubscribersReq{
 				Subscribers: []drip.UpdateSubscriber{
 					drip.UpdateSubscriber{
-						Email:    "test@test.com",
-						NewEmail: "test@test.com",
-						Tags:     []string{"dev", "test"},
+						Email: testEmail,
+						Tags:  []string{"dev", "test"},
 					},
 				},
 			},
@@ -97,15 +96,6 @@ func TestUpdateSubscriber(t *testing.T) {
 				desc:         "failed to get min 1 sub with no parms",
 				minSubs:      1,
 				hasError:     false,
-				minCodeError: 0,
-			},
-		},
-		{
-			req: &drip.UpdateSubscribersReq{},
-			resp: &mockSubscribersResp{
-				desc:         "failed to get error with no id and email",
-				minSubs:      0,
-				hasError:     true,
 				minCodeError: 0,
 			},
 		},
@@ -120,10 +110,10 @@ func TestUpdateSubscriber(t *testing.T) {
 		if err != nil && table.resp.hasError != true {
 			t.Fatalf("hasError %s: %s", table.resp.desc, err)
 		}
-		if len(resp.Errors) < table.resp.minCodeError {
+		if resp != nil && len(resp.Errors) < table.resp.minCodeError {
 			t.Fatalf("minCodeError %s", table.resp.desc)
 		}
-		if len(resp.Subscribers) < table.resp.minSubs {
+		if resp != nil && len(resp.Subscribers) < table.resp.minSubs {
 			t.Fatalf("minSubs %s", table.resp.desc)
 		}
 	}
@@ -135,10 +125,18 @@ func TestDeleteSubscriber(t *testing.T) {
 		resp      *mockResp
 	}{
 		{
-			idOrEmail: "test@test.com",
+			idOrEmail: testEmail,
 			resp: &mockResp{
 				desc:         "failed to delete email",
 				hasError:     false,
+				minCodeError: 0,
+			},
+		},
+		{
+			idOrEmail: "",
+			resp: &mockResp{
+				desc:         "failed to error on no id or email",
+				hasError:     true,
 				minCodeError: 0,
 			},
 		},
@@ -153,8 +151,72 @@ func TestDeleteSubscriber(t *testing.T) {
 		if err != nil && table.resp.hasError != true {
 			t.Fatalf("hasError %s: %s", table.resp.desc, err)
 		}
-		if len(resp.Errors) < table.resp.minCodeError {
+		if resp != nil && len(resp.Errors) < table.resp.minCodeError {
 			t.Fatalf("minCodeError %s", table.resp.desc)
 		}
 	}
+}
+
+func TestFetchSubscriber(t *testing.T) {
+	tables := []struct {
+		idOrEmail string
+		resp      *mockSubscribersResp
+	}{
+		{
+			idOrEmail: testEmail,
+			resp: &mockSubscribersResp{
+				desc:         "failed to fetch email",
+				minSubs:      1,
+				hasError:     false,
+				minCodeError: 0,
+			},
+		},
+		{
+			idOrEmail: "",
+			resp: &mockSubscribersResp{
+				desc:         "failed to error on no id or email",
+				minSubs:      0,
+				hasError:     true,
+				minCodeError: 0,
+			},
+		},
+	}
+
+	dripClient, err := drip.New(apiKey, accountID)
+	if err != nil {
+		t.Fatalf("Failed to get drip client: %s", err)
+	}
+	createTestEmail(t, dripClient)
+
+	for _, table := range tables {
+		resp, err := dripClient.FetchSubscriber(table.idOrEmail)
+		if err != nil && table.resp.hasError != true {
+			t.Fatalf("hasError %s: %s", table.resp.desc, err)
+		}
+		if resp != nil && len(resp.Errors) < table.resp.minCodeError {
+			t.Fatalf("minCodeError %s", table.resp.desc)
+		}
+		if resp != nil && len(resp.Subscribers) < table.resp.minSubs {
+			t.Fatalf("minSubs %s", table.resp.desc)
+		}
+	}
+}
+
+func createTestEmail(t *testing.T, dripClient *drip.Client) error {
+	req := &drip.UpdateSubscribersReq{
+		Subscribers: []drip.UpdateSubscriber{
+			drip.UpdateSubscriber{
+				Email: testEmail,
+				Tags:  []string{"dev", "test"},
+			},
+		},
+	}
+	resp, err := dripClient.UpdateSubscriber(req)
+	if err != nil {
+		t.Fatalf("failed to UpdateSubscriber: %+v", err)
+	}
+	if len(resp.Errors) != 0 {
+		t.Fatalf("failed to UpdateSubscriber: %+v", resp.Errors[0])
+	}
+	return nil
 }
