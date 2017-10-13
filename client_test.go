@@ -21,6 +21,12 @@ type mockSubscribersResp struct {
 	minCodeError int
 }
 
+type mockResp struct {
+	desc         string
+	hasError     bool
+	minCodeError int
+}
+
 func TestNew(t *testing.T) {
 	t.Logf("APIKey(%s) AccountID(%s", apiKey, accountID)
 	var err error
@@ -67,7 +73,6 @@ func TestListSubscribers(t *testing.T) {
 			t.Fatalf("minCodeError %s", table.resp.desc)
 		}
 		if len(resp.Subscribers) < table.resp.minSubs {
-			t.Logf("%+v", resp)
 			t.Fatalf("minSubs %s", table.resp.desc)
 		}
 	}
@@ -111,7 +116,6 @@ func TestUpdateSubscriber(t *testing.T) {
 		t.Fatalf("Failed to get drip client: %s", err)
 	}
 	for _, table := range tables {
-		printJSON(table.req)
 		resp, err := dripClient.UpdateSubscriber(table.req)
 		if err != nil && table.resp.hasError != true {
 			t.Fatalf("hasError %s: %s", table.resp.desc, err)
@@ -120,8 +124,37 @@ func TestUpdateSubscriber(t *testing.T) {
 			t.Fatalf("minCodeError %s", table.resp.desc)
 		}
 		if len(resp.Subscribers) < table.resp.minSubs {
-			t.Logf("%+v", resp)
 			t.Fatalf("minSubs %s", table.resp.desc)
+		}
+	}
+}
+
+func TestDeleteSubscriber(t *testing.T) {
+	tables := []struct {
+		idOrEmail string
+		resp      *mockResp
+	}{
+		{
+			idOrEmail: "test@test.com",
+			resp: &mockResp{
+				desc:         "failed to delete email",
+				hasError:     false,
+				minCodeError: 0,
+			},
+		},
+	}
+
+	dripClient, err := drip.New(apiKey, accountID)
+	if err != nil {
+		t.Fatalf("Failed to get drip client: %s", err)
+	}
+	for _, table := range tables {
+		resp, err := dripClient.DeleteSubscriber(table.idOrEmail)
+		if err != nil && table.resp.hasError != true {
+			t.Fatalf("hasError %s: %s", table.resp.desc, err)
+		}
+		if len(resp.Errors) < table.resp.minCodeError {
+			t.Fatalf("minCodeError %s", table.resp.desc)
 		}
 	}
 }

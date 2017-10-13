@@ -62,6 +62,9 @@ func (c *Client) getReq(method, url string, body interface{}) (*http.Request, er
 
 func (c *Client) decodeResp(resp *http.Response, response interface{}) error {
 	var err error
+	if strings.Contains(resp.Header.Get("Content-Type"), "No Content") {
+		return nil
+	}
 	if !strings.Contains(resp.Header.Get("Content-Type"), "json") {
 		var b []byte
 		var body string
@@ -116,7 +119,7 @@ type Subscriber struct {
 	Links            Links             `json:"links,omitempty"`
 }
 
-// SubscribersResp is a response sent with subscribers in it.
+// SubscribersResp is a response recieved with subscribers in it.
 // List functions have Meta for pagination. StatusCode is included in resp.
 type SubscribersResp struct {
 	StatusCode  int           `json:"status_code,omniempty"`
@@ -124,6 +127,12 @@ type SubscribersResp struct {
 	Meta        Meta          `json:"meta,omitempty"`
 	Subscribers []*Subscriber `json:"subscribers,omitempty"`
 	Errors      []CodeError   `json:"errors,omitempty"`
+}
+
+// Response is a basic response recieved.
+type Response struct {
+	StatusCode int         `json:"status_code,omitempty"`
+	Errors     []CodeError `json:"errors,omitempty"`
 }
 
 // ListSubscribersReq is a request for ListSubscribers.
@@ -187,6 +196,23 @@ func (c *Client) UpdateSubscriber(req *UpdateSubscribersReq) (*SubscribersResp, 
 		return nil, err
 	}
 	resp := new(SubscribersResp)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
+}
+
+// DeleteSubscriber deletes a subscriber.
+func (c *Client) DeleteSubscriber(idOrEmail string) (*Response, error) {
+	url := fmt.Sprintf("%s/%s/subscribers/%s", baseURL, c.accountID, idOrEmail)
+	httpReq, err := c.getReq(http.MethodDelete, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(Response)
 	resp.StatusCode = httpResp.StatusCode
 	err = c.decodeResp(httpResp, resp)
 	return resp, err
