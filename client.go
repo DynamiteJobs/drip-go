@@ -17,8 +17,10 @@ var (
 	ErrBadAPIKey = fmt.Errorf("bad api key")
 	// ErrBadAccountID is returned by New if bad account ID.
 	ErrBadAccountID = fmt.Errorf("bad drip account id")
-	//
-	ErrIDorEmailEmpty = fmt.Errorf("ID or Email cannot be empty")
+	// ErrIDorEmailEmpty is returned if id and email are both empty.
+	ErrIDorEmailEmpty = fmt.Errorf("ID and Email both cannot be empty")
+	// ErrInvalidInput is returned if input is invalid.
+	ErrInvalidInput = fmt.Errorf("invalid input")
 )
 
 // Client is a client to interact with the Drip API.
@@ -64,7 +66,7 @@ func (c *Client) getReq(method, url string, body interface{}) (*http.Request, er
 
 func (c *Client) decodeResp(resp *http.Response, response interface{}) error {
 	var err error
-	if strings.Contains(resp.Header.Get("Content-Type"), "No Content") {
+	if resp.StatusCode == 204 || strings.Contains(resp.Header.Get("Content-Type"), "No Content") {
 		return nil
 	}
 	if !strings.Contains(resp.Header.Get("Content-Type"), "json") {
@@ -258,6 +260,23 @@ type TagReq struct {
 func (c *Client) TagSubscriber(req *TagsReq) (*Response, error) {
 	url := fmt.Sprintf("%s/%s/tags", baseURL, c.accountID)
 	httpReq, err := c.getReq(http.MethodPost, url, req)
+	if err != nil {
+		return nil, err
+	}
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(Response)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
+}
+
+// RemoveSubscriberTag adds a tag to a subscriber.
+func (c *Client) RemoveSubscriberTag(req *TagReq) (*Response, error) {
+	url := fmt.Sprintf("%s/%s/subscribers/%s/tags/%s", baseURL, c.accountID, req.Email, req.Tag)
+	httpReq, err := c.getReq(http.MethodDelete, url, nil)
 	if err != nil {
 		return nil, err
 	}
