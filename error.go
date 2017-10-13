@@ -1,6 +1,7 @@
 package drip
 
 // Code is an Code returned with errors from the Drip API.
+// https://www.getdrip.com/docs/rest-api#errors
 type Code string
 
 const (
