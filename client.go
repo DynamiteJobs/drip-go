@@ -168,18 +168,18 @@ func (c *Client) ListSubscribers(req *ListSubscribersReq) (*SubscribersResp, err
 
 // UpdateSubscriber is the info available to update or create a subscriber.
 type UpdateSubscriber struct {
-	Email          string            `json:"email,omitempty"`
-	ID             string            `json:"id,omitempty"`
-	NewEmail       string            `json:"new_email,omitempty"`
-	UserID         string            `json:"user_id,omitempty"`
-	TimeZone       string            `json:"time_zone,omitempty"`
-	LifetimeValue  *float32          `json:"lifetime_value,omitempty"`
-	IPAddress      string            `json:"ip_address,omitempty"`
-	CustomerFields map[string]string `json:"customer_fields,omitempty"`
-	Tags           []string          `json:"tags,omitempty"`
-	RemoveTags     []string          `json:"remove_tags,omitempty"`
-	Prospect       *bool             `json:"prospect,omitempty"`
-	BaseLeadScore  *int              `json:"base_lead_score,omitempty"`
+	Email         string            `json:"email,omitempty"`
+	ID            string            `json:"id,omitempty"`
+	NewEmail      string            `json:"new_email,omitempty"`
+	UserID        string            `json:"user_id,omitempty"`
+	TimeZone      string            `json:"time_zone,omitempty"`
+	LifetimeValue *float32          `json:"lifetime_value,omitempty"`
+	IPAddress     string            `json:"ip_address,omitempty"`
+	CustomFields  map[string]string `json:"custom_fields,omitempty"`
+	Tags          []string          `json:"tags,omitempty"`
+	RemoveTags    []string          `json:"remove_tags,omitempty"`
+	Prospect      *bool             `json:"prospect,omitempty"`
+	BaseLeadScore *int              `json:"base_lead_score,omitempty"`
 }
 
 // UpdateSubscribersReq is a request for UpdateSubscriber.
