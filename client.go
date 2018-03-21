@@ -289,3 +289,32 @@ func (c *Client) RemoveSubscriberTag(req *TagReq) (*Response, error) {
 	err = c.decodeResp(httpResp, resp)
 	return resp, err
 }
+
+// SubscribersBatch is a request for UpdateBatchSubscribers.
+type SubscribersBatch struct {
+	Subscribers []UpdateSubscriber `json:"subscribers,omitempty"`
+}
+
+// UpdateBatchSubscribersReq is a request for UpdateBatchSubscribers.
+type UpdateBatchSubscribersReq struct {
+	Batches []SubscribersBatch `json:"batches,omitempty"`
+}
+
+// UpdateBatchSubscribers creates or updates a subscribers.
+// We recommend using this API endpoint when you need to create or update a collection of subscribers at once.
+// Note: Since our batch APIs process requests in the background, there may be a delay between the time you submit your request and the time your data appears in user interface.
+func (c *Client) UpdateBatchSubscribers(req *UpdateBatchSubscribersReq) (*SubscribersResp, error) {
+	url := fmt.Sprintf("%s/%s/subscribers/batches", baseURL, c.accountID)
+	httpReq, err := c.getReq(http.MethodPost, url, req)
+	if err != nil {
+		return nil, err
+	}
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(SubscribersResp)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
+}
