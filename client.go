@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/google/go-querystring/query"
 )
 
 const baseURL = "https://api.getdrip.com/v2/"
@@ -49,10 +52,20 @@ func New(apiKey, accountID string) (*Client, error) {
 }
 
 func (c *Client) getReq(method, url string, body interface{}) (*http.Request, error) {
-	b := new(bytes.Buffer)
-	err := json.NewEncoder(b).Encode(body)
-	if err != nil {
-		return nil, err
+	var b io.Reader
+	if method == http.MethodGet {
+		v, err := query.Values(body)
+		if err != nil {
+			return nil, err
+		}
+		url += "?" + v.Encode()
+	} else {
+		jsonOut := new(bytes.Buffer)
+		err := json.NewEncoder(jsonOut).Encode(body)
+		if err != nil {
+			return nil, err
+		}
+		b = jsonOut
 	}
 	req, err := http.NewRequest(method, url, b)
 	if err != nil {
@@ -141,12 +154,12 @@ type Response struct {
 
 // ListSubscribersReq is a request for ListSubscribers.
 type ListSubscribersReq struct {
-	Status           string     `json:"status,omitempty"`
-	Tags             []string   `json:"tags,omitempty"`
-	SubscribedBefore *time.Time `json:"subscribed_before,omitempty"`
-	SubscribedAfter  *time.Time `json:"subscribed_after,omitempty"`
-	Page             *int       `json:"page,omitempty"`
-	PerPage          *int       `json:"per_page,omitempty"`
+	Status           string     `url:"status,omitempty"`
+	Tags             []string   `url:"tags,omitempty"`
+	SubscribedBefore *time.Time `url:"subscribed_before,omitempty"`
+	SubscribedAfter  *time.Time `url:"subscribed_after,omitempty"`
+	Page             *int       `url:"page,omitempty"`
+	PerPage          *int       `url:"per_page,omitempty"`
 }
 
 // ListSubscribers returns a list of subscribers. Either an ID or Email can
