@@ -183,7 +183,7 @@ func (c *Client) ListSubscribers(req *ListSubscribersReq) (*SubscribersResp, err
 type UpdateSubscriber struct {
 	Email         string            `json:"email,omitempty"`
 	Name          string            `json:"name,omitempty"`
-	FistName      string            `json:"first_name,omitempty"`
+	FirstName     string            `json:"first_name,omitempty"`
 	LastName      string            `json:"last_name,omitempty"`
 	ID            string            `json:"id,omitempty"`
 	NewEmail      string            `json:"new_email,omitempty"`
