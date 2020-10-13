@@ -1,7 +1,7 @@
 # drip-go
 Wrapper for the Drip API https://www.getdrip.com/docs/rest-api
 
-[godoc](https://godoc.org/github.com/atishpatel/drip-go)
+[godoc](https://pkg.go.dev/github.com/DynamiteJobs/drip-go)
 
 # Example
 ```go
@@ -25,4 +25,3 @@ Look at test for more examples.
 
 # Contributions
 Please feel free to add a pull request for any feature not available. Pull requests should include test.
-
