@@ -191,6 +191,10 @@ type UpdateSubscriber struct {
 	TimeZone      string            `json:"time_zone,omitempty"`
 	LifetimeValue *float32          `json:"lifetime_value,omitempty"`
 	IPAddress     string            `json:"ip_address,omitempty"`
+	Country       string            `json:"country,omitempty"`
+	City          string            `json:"city,omitempty"`
+	State         string            `json:"state,omitempty"`
+	Zip           string            `json:"zip,omitempty"`
 	CustomFields  map[string]string `json:"custom_fields,omitempty"`
 	Tags          []string          `json:"tags,omitempty"`
 	RemoveTags    []string          `json:"remove_tags,omitempty"`
