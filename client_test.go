@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/atishpatel/drip-go"
+	"github.com/DynamiteJobs/drip-go"
 )
 
 var (
