@@ -1,4 +1,4 @@
-module github.com/DynamiteJobs/drip-go
+module github.com/dynamite-jobs/drip-go
 
 go 1.14
 

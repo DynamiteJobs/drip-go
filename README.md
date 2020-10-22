@@ -1,7 +1,7 @@
 # drip-go
 Wrapper for the Drip API https://www.getdrip.com/docs/rest-api
 
-[godoc](https://pkg.go.dev/github.com/DynamiteJobs/drip-go)
+[godoc](https://pkg.go.dev/github.com/dynamite-jobs/drip-go)
 
 # Example
 ```go
