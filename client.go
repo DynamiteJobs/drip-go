@@ -182,12 +182,19 @@ func (c *Client) ListSubscribers(req *ListSubscribersReq) (*SubscribersResp, err
 // UpdateSubscriber is the info available to update or create a subscriber.
 type UpdateSubscriber struct {
 	Email         string            `json:"email,omitempty"`
+	Name          string            `json:"name,omitempty"`
+	FirstName     string            `json:"first_name,omitempty"`
+	LastName      string            `json:"last_name,omitempty"`
 	ID            string            `json:"id,omitempty"`
 	NewEmail      string            `json:"new_email,omitempty"`
 	UserID        string            `json:"user_id,omitempty"`
 	TimeZone      string            `json:"time_zone,omitempty"`
 	LifetimeValue *float32          `json:"lifetime_value,omitempty"`
 	IPAddress     string            `json:"ip_address,omitempty"`
+	Country       string            `json:"country,omitempty"`
+	City          string            `json:"city,omitempty"`
+	State         string            `json:"state,omitempty"`
+	Zip           string            `json:"zip,omitempty"`
 	CustomFields  map[string]string `json:"custom_fields,omitempty"`
 	Tags          []string          `json:"tags,omitempty"`
 	RemoveTags    []string          `json:"remove_tags,omitempty"`
@@ -301,6 +308,57 @@ func (c *Client) RemoveSubscriberTag(req *TagReq) (*Response, error) {
 	resp.StatusCode = httpResp.StatusCode
 	err = c.decodeResp(httpResp, resp)
 	return resp, err
+}
+
+type eventRoot struct {
+	Events []eventParams `json:"events"`
+}
+
+type eventParams struct {
+	Email  string `json:"email"`
+	Action string `json:"action"`
+}
+
+func (c Client) authenticatedRequest(method, path string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, baseURL+c.accountID+path, body)
+	req.SetBasicAuth(c.apiKey, "")
+	req.Header.Add("Accept", "application/vnd.api+json")
+
+	return req, err
+}
+
+func (c Client) authenticatedPost(path string, body interface{}) error {
+	postBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	req, err := c.authenticatedRequest("POST", path, bytes.NewReader(postBody))
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, err := ioutil.ReadAll(resp.Body)
+		defer func() { _ = resp.Body.Close() }()
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("Drip API error: %s (%d): %s", baseURL+c.accountID+path, resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// RecordEvent sends a custom event to Drip
+func (c Client) RecordEvent(email, eventName string) error {
+	bodyData := eventRoot{
+		Events: []eventParams{
+			{Email: email, Action: eventName},
+		},
+	}
+	return c.authenticatedPost("/events", bodyData)
 }
 
 // SubscribersBatch is a request for UpdateBatchSubscribers.
