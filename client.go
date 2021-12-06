@@ -310,6 +310,57 @@ func (c *Client) RemoveSubscriberTag(req *TagReq) (*Response, error) {
 	return resp, err
 }
 
+type eventRoot struct {
+	Events []eventParams `json:"events"`
+}
+
+type eventParams struct {
+	Email  string `json:"email"`
+	Action string `json:"action"`
+}
+
+func (c Client) authenticatedRequest(method, path string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, baseURL+c.accountID+path, body)
+	req.SetBasicAuth(c.apiKey, "")
+	req.Header.Add("Accept", "application/vnd.api+json")
+
+	return req, err
+}
+
+func (c Client) authenticatedPost(path string, body interface{}) error {
+	postBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	req, err := c.authenticatedRequest("POST", path, bytes.NewReader(postBody))
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, err := ioutil.ReadAll(resp.Body)
+		defer func() { _ = resp.Body.Close() }()
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("Drip API error: %s (%d): %s", baseURL+c.accountID+path, resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// RecordEvent sends a custom event to Drip
+func (c Client) RecordEvent(email, eventName string) error {
+	bodyData := eventRoot{
+		Events: []eventParams{
+			{Email: email, Action: eventName},
+		},
+	}
+	return c.authenticatedPost("/events", bodyData)
+}
+
 // SubscribersBatch is a request for UpdateBatchSubscribers.
 type SubscribersBatch struct {
 	Subscribers []UpdateSubscriber `json:"subscribers,omitempty"`
