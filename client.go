@@ -351,7 +351,7 @@ func (c Client) authenticatedPost(path string, body interface{}) error {
 	return nil
 }
 
-// RecordEvent sends a custom event to Drip
+// RecordEvent sends a custom event (no body yet) to Drip
 func (c Client) RecordEvent(email, eventName string) error {
 	bodyData := eventRoot{
 		Events: []eventParams{
