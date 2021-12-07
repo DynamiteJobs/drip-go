@@ -315,8 +315,9 @@ type eventRoot struct {
 }
 
 type eventParams struct {
-	Email  string `json:"email"`
-	Action string `json:"action"`
+	Email      string                 `json:"email"`
+	Action     string                 `json:"action"`
+	Properties map[string]interface{} `json:"properties"`
 }
 
 func (c Client) authenticatedRequest(method, path string, body io.Reader) (*http.Request, error) {
@@ -333,6 +334,9 @@ func (c Client) authenticatedPost(path string, body interface{}) error {
 		return err
 	}
 	req, err := c.authenticatedRequest("POST", path, bytes.NewReader(postBody))
+	if err != nil {
+		return err
+	}
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
@@ -345,17 +349,17 @@ func (c Client) authenticatedPost(path string, body interface{}) error {
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("Drip API error: %s (%d): %s", baseURL+c.accountID+path, resp.StatusCode, string(body))
+		return fmt.Errorf("drip api error: %s (%d): %s", baseURL+c.accountID+path, resp.StatusCode, string(body))
 	}
 
 	return nil
 }
 
-// RecordEvent sends a custom event (no body yet) to Drip
-func (c Client) RecordEvent(email, eventName string) error {
+// RecordEvent sends a custom event to Drip
+func (c Client) RecordEvent(email, eventName string, properties map[string]interface{}) error {
 	bodyData := eventRoot{
 		Events: []eventParams{
-			{Email: email, Action: eventName},
+			{Email: email, Action: eventName, Properties: properties},
 		},
 	}
 	return c.authenticatedPost("/events", bodyData)
