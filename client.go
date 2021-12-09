@@ -139,7 +139,7 @@ type Subscriber struct {
 // SubscribersResp is a response recieved with subscribers in it.
 // List functions have Meta for pagination. StatusCode is included in resp.
 type SubscribersResp struct {
-	StatusCode  int           `json:"status_code,omniempty"`
+	StatusCode  int           `json:"status_code,omitempty"`
 	Links       Links         `json:"links,omitempty"`
 	Meta        Meta          `json:"meta,omitempty"`
 	Subscribers []*Subscriber `json:"subscribers,omitempty"`
@@ -297,6 +297,38 @@ func (c *Client) TagSubscriber(req *TagsReq) (*Response, error) {
 func (c *Client) RemoveSubscriberTag(req *TagReq) (*Response, error) {
 	url := fmt.Sprintf("%s/%s/subscribers/%s/tags/%s", baseURL, c.accountID, req.Email, req.Tag)
 	httpReq, err := c.getReq(http.MethodDelete, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(Response)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
+}
+
+type eventRoot struct {
+	Events []eventParams `json:"events"`
+}
+
+type eventParams struct {
+	Email      string                 `json:"email"`
+	Action     string                 `json:"action"`
+	Properties map[string]interface{} `json:"properties"`
+}
+
+// RecordEvent sends a custom event to Drip
+func (c Client) RecordEvent(email, eventName string, properties map[string]interface{}) (*Response, error) {
+	bodyData := eventRoot{
+		Events: []eventParams{
+			{Email: email, Action: eventName, Properties: properties},
+		},
+	}
+	path := fmt.Sprintf("%s%s/events", baseURL, c.accountID)
+	httpReq, err := c.getReq(http.MethodPost, path, bodyData)
 	if err != nil {
 		return nil, err
 	}
