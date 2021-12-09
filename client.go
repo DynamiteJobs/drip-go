@@ -77,6 +77,14 @@ func (c *Client) getReq(method, url string, body interface{}) (*http.Request, er
 	return req, nil
 }
 
+// func (c Client) authenticatedRequest(method, path string, body io.Reader) (*http.Request, error) {
+// 	req, err := http.NewRequest(method, baseURL+c.accountID+path, body)
+// 	req.SetBasicAuth(c.apiKey, "")
+// 	req.Header.Add("Accept", "application/vnd.api+json")
+
+// 	return req, err
+// }
+
 func (c *Client) decodeResp(resp *http.Response, response interface{}) error {
 	var err error
 	if resp.StatusCode == 204 || strings.Contains(resp.Header.Get("Content-Type"), "No Content") {
@@ -139,7 +147,7 @@ type Subscriber struct {
 // SubscribersResp is a response recieved with subscribers in it.
 // List functions have Meta for pagination. StatusCode is included in resp.
 type SubscribersResp struct {
-	StatusCode  int           `json:"status_code,omniempty"`
+	StatusCode  int           `json:"status_code,omitempty"`
 	Links       Links         `json:"links,omitempty"`
 	Meta        Meta          `json:"meta,omitempty"`
 	Subscribers []*Subscriber `json:"subscribers,omitempty"`
@@ -320,49 +328,26 @@ type eventParams struct {
 	Properties map[string]interface{} `json:"properties"`
 }
 
-func (c Client) authenticatedRequest(method, path string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, baseURL+c.accountID+path, body)
-	req.SetBasicAuth(c.apiKey, "")
-	req.Header.Add("Accept", "application/vnd.api+json")
-
-	return req, err
-}
-
-func (c Client) authenticatedPost(path string, body interface{}) error {
-	postBody, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-	req, err := c.authenticatedRequest("POST", path, bytes.NewReader(postBody))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, err := ioutil.ReadAll(resp.Body)
-		defer func() { _ = resp.Body.Close() }()
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("drip api error: %s (%d): %s", baseURL+c.accountID+path, resp.StatusCode, string(body))
-	}
-
-	return nil
-}
-
 // RecordEvent sends a custom event to Drip
-func (c Client) RecordEvent(email, eventName string, properties map[string]interface{}) error {
+func (c Client) RecordEvent(email, eventName string, properties map[string]interface{}) (*Response, error) {
 	bodyData := eventRoot{
 		Events: []eventParams{
 			{Email: email, Action: eventName, Properties: properties},
 		},
 	}
-	return c.authenticatedPost("/events", bodyData)
+	path := fmt.Sprintf("%s%s/events", baseURL, c.accountID)
+	httpReq, err := c.getReq(http.MethodPost, path, bodyData)
+	if err != nil {
+		return nil, err
+	}
+	httpResp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	resp := new(Response)
+	resp.StatusCode = httpResp.StatusCode
+	err = c.decodeResp(httpResp, resp)
+	return resp, err
 }
 
 // SubscribersBatch is a request for UpdateBatchSubscribers.
