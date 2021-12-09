@@ -77,14 +77,6 @@ func (c *Client) getReq(method, url string, body interface{}) (*http.Request, er
 	return req, nil
 }
 
-// func (c Client) authenticatedRequest(method, path string, body io.Reader) (*http.Request, error) {
-// 	req, err := http.NewRequest(method, baseURL+c.accountID+path, body)
-// 	req.SetBasicAuth(c.apiKey, "")
-// 	req.Header.Add("Accept", "application/vnd.api+json")
-
-// 	return req, err
-// }
-
 func (c *Client) decodeResp(resp *http.Response, response interface{}) error {
 	var err error
 	if resp.StatusCode == 204 || strings.Contains(resp.Header.Get("Content-Type"), "No Content") {
